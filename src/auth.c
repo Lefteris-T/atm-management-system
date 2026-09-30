@@ -9,7 +9,7 @@ void loginMenu(char a[50], char pass[50])
 
     system("clear");
     printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t\t User Login:");
-    scanf("%s", a);
+    scanf("%49s", a);
 
     // disabling echo
     tcgetattr(fileno(stdin), &oflags);
@@ -23,7 +23,7 @@ void loginMenu(char a[50], char pass[50])
         return exit(1);
     }
     printf("\n\n\n\n\n\t\t\t\tEnter the password to login:");
-    scanf("%s", pass);
+    scanf("%49s", pass);
 
     // restore terminal
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0)
@@ -33,27 +33,31 @@ void loginMenu(char a[50], char pass[50])
     }
 };
 
-const char *getPassword(struct User u)
+int authenticateUser(struct User *u)
 {
-    FILE *fp;
+    FILE *fp = fopen("./data/users.txt", "r");
     struct User userChecker;
 
-    if ((fp = fopen("./data/users.txt", "r")) == NULL)
+    if (fp == NULL)
     {
-        printf("Error! opening file");
-        exit(1);
+        perror("users.txt");
+        return 0;
     }
 
-    while (fscanf(fp, "%s %s", userChecker.name, userChecker.password) != EOF)
+    while (fscanf(fp, "%d %49s %49s",
+                  &userChecker.id,
+                  userChecker.name,
+                  userChecker.password) == 3)
     {
-        if (strcmp(userChecker.name, u.name) == 0)
+        if (strcmp(userChecker.name, u->name) == 0 &&
+            strcmp(userChecker.password, u->password) == 0)
         {
+            u->id = userChecker.id;
             fclose(fp);
-            char *buff = userChecker.password;
-            return buff;
+            return 1;
         }
     }
 
     fclose(fp);
-    return "no user found";
+    return 0;
 }

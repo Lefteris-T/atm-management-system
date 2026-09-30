@@ -56,48 +56,67 @@ void initMenu(struct User *u)
 {
     int r = 0;
     int option;
+
     system("clear");
     printf("\n\n\t\t======= ATM =======\n");
     printf("\n\t\t-->> Feel free to login / register :\n");
     printf("\n\t\t[1]- login\n");
     printf("\n\t\t[2]- register\n");
     printf("\n\t\t[3]- exit\n");
+
     while (!r)
     {
-        scanf("%d", &option);
+        int inputResult = scanf("%d", &option);
+
+        if (inputResult == EOF)
+        {
+            exit(0);
+        }
+
+        if (inputResult != 1)
+        {
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+            printf("Insert a valid operation!\n");
+            continue;
+        }
+
         switch (option)
         {
         case 1:
             loginMenu(u->name, u->password);
-            if (strcmp(u->password, getPassword(*u)) == 0)
+
+            if (authenticateUser(u))
             {
                 printf("\n\nPassword Match!");
+                r = 1;
             }
             else
             {
                 printf("\nWrong password!! or User Name\n");
                 exit(1);
             }
-            r = 1;
             break;
+
         case 2:
-            // student TODO : add your **Registration** function
-            // here
-            r = 1;
+            printf("\nRegistration is not implemented yet.\n");
             break;
+
         case 3:
-            exit(1);
-            break;
+            exit(0);
+
         default:
             printf("Insert a valid operation!\n");
+            break;
         }
     }
-};
-
-int main()
+}
+int main(void)
 {
     struct User u;
-    
+
     initMenu(&u);
     mainMenu(u);
     return 0;
