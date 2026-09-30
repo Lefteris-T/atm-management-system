@@ -3,16 +3,21 @@
 
 char *USERS = "./data/users.txt";
 
-void loginMenu(char a[50], char pass[50])
+int loginMenu(char a[50], char pass[50])
 {
     struct termios oflags, nflags;
+    int passwordRead;
 
     system("clear");
     printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t\t User Login:");
-    scanf("%49s", a);
+    if (scanf("%49s", a) != 1)
+        return 0;
 
-    // disabling echo
-    tcgetattr(fileno(stdin), &oflags);
+    if (tcgetattr(fileno(stdin), &oflags) != 0)
+    {
+        perror("tcgetattr");
+        return 0;
+    }
     nflags = oflags;
     nflags.c_lflag &= ~ECHO;
     nflags.c_lflag |= ECHONL;
@@ -20,18 +25,19 @@ void loginMenu(char a[50], char pass[50])
     if (tcsetattr(fileno(stdin), TCSANOW, &nflags) != 0)
     {
         perror("tcsetattr");
-        return exit(1);
+        return 0;
     }
     printf("\n\n\n\n\n\t\t\t\tEnter the password to login:");
-    scanf("%49s", pass);
+    passwordRead = scanf("%49s", pass);
 
-    // restore terminal
+    // Restore echo even when password input ends early.
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0)
     {
         perror("tcsetattr");
-        return exit(1);
+        return 0;
     }
-};
+    return passwordRead == 1;
+}
 
 int authenticateUser(struct User *u)
 {

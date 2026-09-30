@@ -86,7 +86,11 @@ void initMenu(struct User *u)
         switch (option)
         {
         case 1:
-            loginMenu(u->name, u->password);
+            if (!loginMenu(u->name, u->password))
+            {
+                printf("\nLogin input was not completed.\n");
+                exit(1);
+            }
 
             if (authenticateUser(u))
             {
