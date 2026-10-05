@@ -60,12 +60,12 @@ void initMenu(struct User *u)
     system("clear");
     printf("\n\n\t\t======= ATM =======\n");
     printf("\n\t\t-->> Feel free to login / register :\n");
-    printf("\n\t\t[1]- login\n");
-    printf("\n\t\t[2]- register\n");
-    printf("\n\t\t[3]- exit\n");
 
     while (!r)
     {
+        printf("\n\t\t[1]- login\n");
+        printf("\n\t\t[2]- register\n");
+        printf("\n\t\t[3]- exit\n");
         int inputResult = scanf("%d", &option);
 
         if (inputResult == EOF)
@@ -105,7 +105,7 @@ void initMenu(struct User *u)
             break;
 
         case 2:
-            printf("\nRegistration is not implemented yet.\n");
+            registerMenu();
             break;
 
         case 3:

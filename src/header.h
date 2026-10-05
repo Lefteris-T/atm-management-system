@@ -31,7 +31,7 @@ struct User
 
 // authentication functions
 int loginMenu(char a[50], char pass[50]);
-void registerMenu(char a[50], char pass[50]);
+void registerMenu(void);
 int authenticateUser(struct User *u);
 
 // system function
