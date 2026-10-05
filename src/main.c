@@ -4,70 +4,140 @@ void mainMenu(struct User u)
 {
     int option;
     system("clear");
-    printf("\n\n\t\t======= ATM =======\n\n");
-    printf("\n\t\t-->> Feel free to choose one of the options below <<--\n");
-    printf("\n\t\t[1]- Create a new account\n");
-    printf("\n\t\t[2]- Update account information\n");
-    printf("\n\t\t[3]- Check accounts\n");
-    printf("\n\t\t[4]- Check list of owned account\n");
-    printf("\n\t\t[5]- Make Transaction\n");
-    printf("\n\t\t[6]- Remove existing account\n");
-    printf("\n\t\t[7]- Transfer ownership\n");
-    printf("\n\t\t[8]- Exit\n");
-    scanf("%d", &option);
 
-    switch (option)
+    while (1)
     {
-    case 1:
-        createNewAcc(u);
-        break;
-    case 2:
-        // student TODO : add your **Update account information** function
-        // here
-        break;
-    case 3:
-    {
-        int requestedAccountNbr;
-        struct Record found;
+        printf("\n\n\t\t======= ATM =======\n\n");
+        printf("\n\t\t-->> Feel free to choose one of the options below <<--\n");
+        printf("\n\t\t[1]- Create a new account\n");
+        printf("\n\t\t[2]- Update account information\n");
+        printf("\n\t\t[3]- Check accounts\n");
+        printf("\n\t\t[4]- Check list of owned account\n");
+        printf("\n\t\t[5]- Make Transaction\n");
+        printf("\n\t\t[6]- Remove existing account\n");
+        printf("\n\t\t[7]- Transfer ownership\n");
+        printf("\n\t\t[8]- Exit\n");
+        scanf("%d", &option);
 
-        printf("\nEnter the account number: ");
-        if (scanf("%d", &requestedAccountNbr) != 1)
+        switch (option)
         {
-            printf("Invalid account number.\n");
+        case 1:
+            createNewAcc(u);
+            break;
+        case 2:
+            // student TODO : add your **Update account information** function
+            // here
+            break;
+        case 3:
+        {
+            int requestedAccountNbr;
+            struct Record found;
+
+            printf("\nEnter the account number: ");
+
+            int inputResult = scanf("%d", &requestedAccountNbr);
+
+            if (inputResult == EOF)
+            {
+                return;
+            }
+
+            if (inputResult != 1)
+            {
+                int ch;
+                while ((ch = getchar()) != '\n' && ch != EOF)
+                {
+                }
+
+                printf("Invalid account number.\n");
+            }
+            else if (findOwnedAccount(u, requestedAccountNbr, &found))
+            {
+                printf("\nAccount number: %d\n"
+                       "Owner: %s\n"
+                       "Deposit date: %02d/%02d/%04d\n"
+                       "Country: %s\n"
+                       "Phone: %d\n"
+                       "Balance: $%.2f\n"
+                       "Account type: %s\n",
+                       found.accountNbr,
+                       found.name,
+                       found.deposit.month,
+                       found.deposit.day,
+                       found.deposit.year,
+                       found.country,
+                       found.phone,
+                       found.amount,
+                       found.accountType);
+
+                showAccountInterest(found);
+            }
+            else
+            {
+                printf("Account not found or not owned by you.\n");
+            }
+
+            while (1)
+            {
+                int nextOption;
+
+                printf("\nEnter 1 for the main menu or 0 to exit: ");
+
+                int nextInput = scanf("%d", &nextOption);
+
+                if (nextInput == EOF)
+                {
+                    return;
+                }
+
+                if (nextInput != 1)
+                {
+                    int ch;
+                    while ((ch = getchar()) != '\n' && ch != EOF)
+                    {
+                    }
+
+                    printf("Invalid operation!\n");
+                    continue;
+                }
+
+                if (nextOption == 1)
+                {
+                    break;
+                }
+
+                if (nextOption == 0)
+                {
+                    return;
+                }
+
+                printf("Invalid operation!\n");
+            }
+
             break;
         }
-
-        if (findOwnedAccount(u, requestedAccountNbr, &found))
-        {
-            printf("Owned account found: %d\n", found.accountNbr);
+        break;
+        case 4:
+            checkAllAccounts(u);
+            break;
+        case 5:
+            // student TODO : add your **Make transaction** function
+            // here
+            break;
+        case 6:
+            // student TODO : add your **Remove existing account** function
+            // here
+            break;
+        case 7:
+            // student TODO : add your **Transfer owner** function
+            // here
+            break;
+        case 8:
+            exit(1);
+            break;
+        default:
+            printf("Invalid operation!\n");
         }
-        else
-        {
-            printf("Account not found or not owned by you.\n");
-        }
-        break;
-    }
-    break;
-    case 4:
-        checkAllAccounts(u);
-        break;
-    case 5:
-        // student TODO : add your **Make transaction** function
-        // here
-        break;
-    case 6:
-        // student TODO : add your **Remove existing account** function
-        // here
-        break;
-    case 7:
-        // student TODO : add your **Transfer owner** function
-        // here
-        break;
-    case 8:
-        exit(1);
-        break;
-    default:
-        printf("Invalid operation!\n");
     }
 };
 

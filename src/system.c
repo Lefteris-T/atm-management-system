@@ -83,7 +83,7 @@ invalid:
     system("clear");
     if (option == 1)
     {
-        mainMenu(u);
+        return;
     }
     else if (option == 0)
     {
@@ -268,4 +268,51 @@ int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
 
     fclose(pf);
     return 0;
+}
+void showAccountInterest(struct Record r)
+{
+    if (strcmp(r.accountType, "current") == 0)
+    {
+        printf("You will not get interests because the account is of type current\n");
+        return;
+    }
+
+    if (strcmp(r.accountType, "savings") == 0 ||
+        strcmp(r.accountType, "saving") == 0)
+    {
+        double interest = r.amount * 0.07 / 12.0;
+
+        printf("You will get $%.2f as interest on day %d of every month\n",
+               interest, r.deposit.day);
+        return;
+    }
+    double rate = 0.0;
+    int years = 0;
+
+    if (strcmp(r.accountType, "fixed01") == 0)
+    {
+        rate = 0.04;
+        years = 1;
+    }
+    else if (strcmp(r.accountType, "fixed02") == 0)
+    {
+        rate = 0.05;
+        years = 2;
+    }
+    else if (strcmp(r.accountType, "fixed03") == 0)
+    {
+        rate = 0.08;
+        years = 3;
+    }
+
+    if (years > 0)
+    {
+        double interest = r.amount * rate * years;
+
+        printf("You will get $%.2f as interest on %02d/%02d/%04d\n",
+               interest,
+               r.deposit.month,
+               r.deposit.day,
+               r.deposit.year + years);
+    }
 }

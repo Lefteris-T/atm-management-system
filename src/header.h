@@ -39,3 +39,4 @@ int findOwnedAccount(struct User u, int accountNbr, struct Record *out);
 void createNewAcc(struct User u);
 void mainMenu(struct User u);
 void checkAllAccounts(struct User u);
+void showAccountInterest(struct Record r);
