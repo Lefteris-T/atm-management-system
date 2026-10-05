@@ -4,10 +4,10 @@ const char *RECORDS = "./data/records.txt";
 
 int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
 {
-    return fscanf(ptr, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+    return fscanf(ptr, "%d %d %49s %d %d/%d/%d %99s %d %lf %9s",
                   &r->id,
-		  &r->userId,
-		  name,
+                  &r->userId,
+                  name,
                   &r->accountNbr,
                   &r->deposit.month,
                   &r->deposit.day,
@@ -15,15 +15,15 @@ int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
                   r->country,
                   &r->phone,
                   &r->amount,
-                  r->accountType) != EOF;
+                  r->accountType) == 11;
 }
 
 void saveAccountToFile(FILE *ptr, struct User u, struct Record r)
 {
     fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n\n",
             r.id,
-	    u.id,
-	    u.name,
+            u.id,
+            u.name,
             r.accountNbr,
             r.deposit.month,
             r.deposit.day,
@@ -103,32 +103,108 @@ void createNewAcc(struct User u)
     char userName[50];
     FILE *pf = fopen(RECORDS, "a+");
 
-noAccount:
+    if (pf == NULL)
+    {
+        perror("records.txt");
+        return;
+    }
+
     system("clear");
     printf("\t\t\t===== New record =====\n");
-
+noAccount:
     printf("\nEnter today's date(mm/dd/yyyy):");
-    scanf("%d/%d/%d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
+    if (scanf("%d/%d/%d",
+              &r.deposit.month,
+              &r.deposit.day,
+              &r.deposit.year) != 3 ||
+        r.deposit.month < 1 || r.deposit.month > 12 ||
+        r.deposit.day < 1 || r.deposit.day > 31 ||
+        r.deposit.year < 1)
+    {
+        printf("Invalid date.\n");
+        fclose(pf);
+        return;
+    }
+
     printf("\nEnter the account number:");
-    scanf("%d", &r.accountNbr);
+    if (scanf("%d", &r.accountNbr) != 1 || r.accountNbr < 0)
+    {
+        printf("Invalid account number.\n");
+        fclose(pf);
+        return;
+    }
+
+    int maxId = -1;
+    rewind(pf);
 
     while (getAccountFromFile(pf, userName, &cr))
     {
-        if (strcmp(userName, u.name) == 0 && cr.accountNbr == r.accountNbr)
+        if (cr.id > maxId)
+        {
+            maxId = cr.id;
+        }
+
+        if (cr.userId == u.id && cr.accountNbr == r.accountNbr)
         {
             printf("✖ This Account already exists for this user\n\n");
             goto noAccount;
         }
     }
-    printf("\nEnter the country:");
-    scanf("%s", r.country);
-    printf("\nEnter the phone number:");
-    scanf("%d", &r.phone);
-    printf("\nEnter amount to deposit: $");
-    scanf("%lf", &r.amount);
-    printf("\nChoose the type of account:\n\t-> saving\n\t-> current\n\t-> fixed01(for 1 year)\n\t-> fixed02(for 2 years)\n\t-> fixed03(for 3 years)\n\n\tEnter your choice:");
-    scanf("%s", r.accountType);
 
+    r.id = maxId + 1;
+    r.userId = u.id;
+
+    printf("\nEnter the country:");
+    if (scanf("%99s", r.country) != 1)
+    {
+        printf("Invalid country.\n");
+        fclose(pf);
+        return;
+    }
+
+    printf("\nEnter the phone number:");
+    if (scanf("%d", &r.phone) != 1 || r.phone <= 0)
+    {
+        printf("Invalid phone number.\n");
+        fclose(pf);
+        return;
+    }
+
+    printf("\nEnter amount to deposit: $");
+    if (scanf("%lf", &r.amount) != 1 || r.amount < 0.0)
+    {
+        printf("Invalid deposit amount.\n");
+        fclose(pf);
+        return;
+    }
+
+    printf("\nChoose the type of account:\n"
+           "\t-> savings\n"
+           "\t-> current\n"
+           "\t-> fixed01(for 1 year)\n"
+           "\t-> fixed02(for 2 years)\n"
+           "\t-> fixed03(for 3 years)\n\n"
+           "\tEnter your choice:");
+
+    if (scanf("%9s", r.accountType) != 1)
+    {
+        printf("Invalid account type input.\n");
+        fclose(pf);
+        return;
+    }
+
+    if (strcmp(r.accountType, "savings") != 0 &&
+        strcmp(r.accountType, "current") != 0 &&
+        strcmp(r.accountType, "fixed01") != 0 &&
+        strcmp(r.accountType, "fixed02") != 0 &&
+        strcmp(r.accountType, "fixed03") != 0)
+    {
+        printf("Invalid account type.\n");
+        fclose(pf);
+        return;
+    }
+
+    fseek(pf, 0, SEEK_END);
     saveAccountToFile(pf, u, r);
 
     fclose(pf);
@@ -141,6 +217,11 @@ void checkAllAccounts(struct User u)
     struct Record r;
 
     FILE *pf = fopen(RECORDS, "r");
+    if (pf == NULL)
+    {
+        perror("records.txt");
+        return;
+    }
 
     system("clear");
     printf("\t\t====== All accounts from user, %s =====\n\n", u.name);
@@ -151,8 +232,8 @@ void checkAllAccounts(struct User u)
             printf("_____________________\n");
             printf("\nAccount number:%d\nDeposit Date:%d/%d/%d \ncountry:%s \nPhone number:%d \nAmount deposited: $%.2f \nType Of Account:%s\n",
                    r.accountNbr,
-                   r.deposit.day,
                    r.deposit.month,
+                   r.deposit.day,
                    r.deposit.year,
                    r.country,
                    r.phone,
