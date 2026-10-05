@@ -227,7 +227,7 @@ void checkAllAccounts(struct User u)
     printf("\t\t====== All accounts from user, %s =====\n\n", u.name);
     while (getAccountFromFile(pf, userName, &r))
     {
-        if (strcmp(userName, u.name) == 0)
+        if (r.userId == u.id)
         {
             printf("_____________________\n");
             printf("\nAccount number:%d\nDeposit Date:%d/%d/%d \ncountry:%s \nPhone number:%d \nAmount deposited: $%.2f \nType Of Account:%s\n",
@@ -243,4 +243,29 @@ void checkAllAccounts(struct User u)
     }
     fclose(pf);
     success(u);
+}
+int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
+{
+    FILE *pf = fopen(RECORDS, "r");
+    struct Record current = {0};
+
+    if (pf == NULL)
+    {
+        perror("records.txt");
+        return 0;
+    }
+
+    while (getAccountFromFile(pf, current.name, &current))
+    {
+        if (current.userId == u.id &&
+            current.accountNbr == accountNbr)
+        {
+            *out = current;
+            fclose(pf);
+            return 1;
+        }
+    }
+
+    fclose(pf);
+    return 0;
 }

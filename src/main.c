@@ -26,9 +26,28 @@ void mainMenu(struct User u)
         // here
         break;
     case 3:
-        // student TODO : add your **Check the details of existing accounts** function
-        // here
+    {
+        int requestedAccountNbr;
+        struct Record found;
+
+        printf("\nEnter the account number: ");
+        if (scanf("%d", &requestedAccountNbr) != 1)
+        {
+            printf("Invalid account number.\n");
+            break;
+        }
+
+        if (findOwnedAccount(u, requestedAccountNbr, &found))
+        {
+            printf("Owned account found: %d\n", found.accountNbr);
+        }
+        else
+        {
+            printf("Account not found or not owned by you.\n");
+        }
         break;
+    }
+    break;
     case 4:
         checkAllAccounts(u);
         break;

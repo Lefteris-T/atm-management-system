@@ -33,6 +33,7 @@ struct User
 int loginMenu(char a[50], char pass[50]);
 void registerMenu(void);
 int authenticateUser(struct User *u);
+int findOwnedAccount(struct User u, int accountNbr, struct Record *out);
 
 // system function
 void createNewAcc(struct User u);
