@@ -1,5 +1,38 @@
 #include "header.h"
 
+static int returnToMenuOrExit(void)
+{
+    int choice;
+
+    while (1)
+    {
+        printf("\nEnter 1 for the main menu or 0 to exit: ");
+
+        int inputResult = scanf("%d", &choice);
+
+        if (inputResult == EOF)
+            return 0;
+
+        if (inputResult != 1)
+        {
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+
+            printf("Invalid operation!\n");
+            continue;
+        }
+
+        if (choice == 1)
+            return 1;
+
+        if (choice == 0)
+            return 0;
+
+        printf("Invalid operation!\n");
+    }
+}
 void mainMenu(struct User u)
 {
     int option;
@@ -17,7 +50,24 @@ void mainMenu(struct User u)
         printf("\n\t\t[6]- Remove existing account\n");
         printf("\n\t\t[7]- Transfer ownership\n");
         printf("\n\t\t[8]- Exit\n");
-        scanf("%d", &option);
+        int inputResult = scanf("%d", &option);
+
+        if (inputResult == EOF)
+            return;
+
+        if (inputResult != 1)
+        {
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+
+            printf("Invalid operation!\n");
+            if (!returnToMenuOrExit())
+                return;
+
+            continue;
+        }
 
         switch (option)
         {
@@ -126,8 +176,9 @@ void mainMenu(struct User u)
             checkAllAccounts(u);
             break;
         case 5:
-            // student TODO : add your **Make transaction** function
-            // here
+            makeTransaction(u);
+            if (!returnToMenuOrExit())
+                return;
             break;
         case 6:
             // student TODO : add your **Remove existing account** function

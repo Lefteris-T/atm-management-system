@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <unistd.h>
 #include "header.h"
+#include <math.h>
 
 const char *RECORDS = "./data/records.txt";
 
@@ -515,4 +516,98 @@ void updateAccount(struct User u)
         printf("Account updated successfully.\n");
     else
         printf("Could not update the account.\n");
+}
+
+static void clearInputLine(void)
+{
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF)
+    {
+    }
+}
+void makeTransaction(struct User u)
+{
+    int accountId;
+    struct Record record;
+
+    printf("Enter the account ID: ");
+    if (scanf("%d", &accountId) != 1)
+    {
+        clearInputLine();
+        printf("Invalid account ID.\n");
+        return;
+    }
+
+    if (findOwnedAccount(u, accountId, &record) != 1)
+    {
+        printf("Account not found or it does not belong to you.\n");
+        return;
+    }
+
+    if (strcmp(record.accountType, "fixed01") == 0 ||
+        strcmp(record.accountType, "fixed02") == 0 ||
+        strcmp(record.accountType, "fixed03") == 0)
+    {
+        printf("Transactions are not allowed for fixed accounts.\n");
+        return;
+    }
+
+    int choice;
+    double amount;
+
+    printf("Balance: $%.2f\n", record.amount);
+    printf("1. Deposit\n2. Withdraw\nChoice: ");
+
+    if (scanf("%d", &choice) != 1)
+    {
+        clearInputLine();
+        printf("Invalid transaction choice.\n");
+        return;
+    }
+
+    if (choice != 1 && choice != 2)
+    {
+        printf("Invalid transaction choice.\n");
+        return;
+    }
+
+    printf("Amount: $");
+    if (scanf("%lf", &amount) != 1)
+    {
+        clearInputLine();
+        printf("Invalid amount.\n");
+        return;
+    }
+
+    if (!isfinite(amount) || amount <= 0)
+    {
+        printf("Invalid amount.\n");
+        return;
+    }
+
+    if (choice == 2 && amount > record.amount)
+    {
+        printf("Insufficient funds.\n");
+        return;
+    }
+
+    double newBalance = choice == 1
+                            ? record.amount + amount
+                            : record.amount - amount;
+
+    if (!isfinite(newBalance))
+    {
+        printf("Invalid resulting balance.\n");
+        return;
+    }
+
+    record.amount = newBalance;
+
+    if (rewriteOwnedAccount(u.id, accountId, &record) != 1)
+    {
+        printf("Transaction could not be saved.\n");
+        return;
+    }
+
+    printf("Transaction saved. New balance: $%.2f\n", record.amount);
 }
