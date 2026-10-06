@@ -186,8 +186,9 @@ void mainMenu(struct User u)
                 return;
             break;
         case 7:
-            // student TODO : add your **Transfer owner** function
-            // here
+            transferOwnership(u);
+            if (!returnToMenuOrExit())
+                return;
             break;
         case 8:
             exit(1);

@@ -48,3 +48,4 @@ int rewriteOwnedAccount(int ownerId, int accountId,
                         const struct Record *replacement);
 void updateAccount(struct User u);
 void removeAccount(struct User u);
+void transferOwnership(struct User u);

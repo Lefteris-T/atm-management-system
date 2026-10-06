@@ -102,8 +102,6 @@ int rewriteOwnedAccount(int ownerId, int accountId,
 
             if (replacement->id != current.id ||
                 replacement->accountNbr != current.accountNbr ||
-                replacement->userId != current.userId ||
-                strcmp(replacement->name, current.name) != 0 ||
                 !saveAccountToFile(target, replacement))
             {
                 failed = 1;
@@ -656,4 +654,149 @@ void removeAccount(struct User u)
         printf("Account deleted successfully.\n");
     else
         printf("Account could not be deleted.\n");
+}
+static int findUserByName(const char *name, struct User *out)
+{
+    FILE *pf = fopen("./data/users.txt", "r");
+    if (pf == NULL)
+    {
+        perror("users.txt");
+        return -1;
+    }
+
+    struct User candidate;
+    int fieldsRead;
+
+    while ((fieldsRead = fscanf(pf, "%d %49s %49s",
+                                &candidate.id,
+                                candidate.name,
+                                candidate.password)) == 3)
+    {
+        if (strcmp(candidate.name, name) == 0)
+        {
+            *out = candidate;
+            fclose(pf);
+            return 1;
+        }
+    }
+
+    int result = (fieldsRead == EOF && feof(pf) && !ferror(pf))
+                     ? 0
+                     : -1;
+
+    fclose(pf);
+    return result;
+}
+static int userHasAccountNumber(int userId, int accountNbr);
+
+void transferOwnership(struct User u)
+{
+    int accountId;
+    struct Record record;
+    char recipientName[50];
+    struct User recipient;
+
+    printf("Enter the account ID to transfer: ");
+    if (scanf("%d", &accountId) != 1)
+    {
+        clearInputLine();
+        printf("Invalid account ID.\n");
+        return;
+    }
+
+    if (findOwnedAccount(u, accountId, &record) != 1)
+    {
+        printf("Account not found or it does not belong to you.\n");
+        return;
+    }
+
+    printf("Enter the recipient's username: ");
+    if (scanf("%49s", recipientName) != 1)
+    {
+        printf("Invalid username.\n");
+        return;
+    }
+
+    int result = findUserByName(recipientName, &recipient);
+
+    if (result != 1)
+    {
+        printf(result == 0 ? "User not found.\n"
+                           : "Could not read users.txt.\n");
+        return;
+    }
+
+    if (recipient.id == u.id)
+    {
+        printf("You already own this account.\n");
+        return;
+    }
+    int collision = userHasAccountNumber(recipient.id, record.accountNbr);
+
+    if (collision == 1)
+    {
+        printf("The recipient already has this account number.\n");
+        return;
+    }
+
+    if (collision == -1)
+    {
+        printf("Could not check the recipient's accounts.\n");
+        return;
+    }
+
+    int confirm;
+
+    printf("Transfer account ID %d (number %d) to %s?\n",
+           record.id, record.accountNbr, recipient.name);
+    printf("Enter 1 to confirm or 0 to cancel: ");
+
+    if (scanf("%d", &confirm) != 1)
+    {
+        clearInputLine();
+        printf("Invalid choice. Transfer cancelled.\n");
+        return;
+    }
+
+    if (confirm != 1)
+    {
+        printf("Transfer cancelled.\n");
+        return;
+    }
+
+    record.userId = recipient.id;
+    snprintf(record.name, sizeof(record.name), "%s", recipient.name);
+
+    if (rewriteOwnedAccount(u.id, accountId, &record) != 1)
+    {
+        printf("Transfer could not be saved.\n");
+        return;
+    }
+
+    printf("Account transferred to %s.\n", recipient.name);
+}
+static int userHasAccountNumber(int userId, int accountNbr)
+{
+    FILE *pf = fopen(RECORDS, "r");
+    if (pf == NULL)
+    {
+        perror("records.txt");
+        return -1;
+    }
+
+    struct Record current;
+    int readStatus;
+
+    while ((readStatus = getAccountFromFile(pf, &current)) == 1)
+    {
+        if (current.userId == userId &&
+            current.accountNbr == accountNbr)
+        {
+            fclose(pf);
+            return 1;
+        }
+    }
+
+    fclose(pf);
+    return readStatus == 0 ? 0 : -1;
 }
