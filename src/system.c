@@ -48,7 +48,7 @@ int saveAccountToFile(FILE *ptr, const struct Record *r)
                    r->amount,
                    r->accountType) >= 0;
 }
-int rewriteOwnedAccount(int ownerId, int accountNbr,
+int rewriteOwnedAccount(int ownerId, int accountId,
                         const struct Record *replacement)
 {
     FILE *source = fopen(RECORDS, "r");
@@ -85,7 +85,7 @@ int rewriteOwnedAccount(int ownerId, int accountNbr,
     while ((readStatus = getAccountFromFile(source, &current)) == 1)
     {
         if (current.userId == ownerId &&
-            current.accountNbr == accountNbr)
+            current.id == accountId)
         {
             if (found)
             {
@@ -381,7 +381,7 @@ void checkAllAccounts(struct User u)
     fclose(pf);
     success(u);
 }
-int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
+int findOwnedAccount(struct User u, int accountId, struct Record *out)
 {
     FILE *pf = fopen(RECORDS, "r");
     struct Record current = {0};
@@ -396,7 +396,7 @@ int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
     while ((readStatus = getAccountFromFile(pf, &current)) == 1)
     {
         if (current.userId == u.id &&
-            current.accountNbr == accountNbr)
+            current.id == accountId)
         {
             *out = current;
             fclose(pf);
@@ -453,4 +453,66 @@ void showAccountInterest(struct Record r)
                r.deposit.day,
                r.deposit.year + years);
     }
+}
+void updateAccount(struct User u)
+{
+    int accountId;
+    struct Record record;
+
+    printf("Enter the account ID to update: ");
+    if (scanf("%d", &accountId) != 1)
+    {
+        printf("Invalid account ID.\n");
+        return;
+    }
+
+    if (!findOwnedAccount(u, accountId, &record))
+    {
+        printf("Account not found or it does not belong to you.\n");
+        return;
+    }
+
+    int choice;
+
+    printf("What do you want to update?\n");
+    printf("1. Country\n");
+    printf("2. Phone number\n");
+    printf("Choice: ");
+
+    if (scanf("%d", &choice) != 1)
+    {
+        printf("Invalid choice.\n");
+        return;
+    }
+
+    if (choice == 1)
+    {
+        printf("New country: ");
+        if (scanf("%99s", record.country) != 1)
+        {
+            printf("Invalid country.\n");
+            return;
+        }
+    }
+    else if (choice == 2)
+    {
+        printf("New phone number: ");
+        if (scanf("%d", &record.phone) != 1 || record.phone <= 0)
+        {
+            printf("Invalid phone number.\n");
+            return;
+        }
+    }
+    else
+    {
+        printf("Invalid choice. Nothing was changed.\n");
+        return;
+    }
+
+    int result = rewriteOwnedAccount(u.id, accountId, &record);
+
+    if (result == 1)
+        printf("Account updated successfully.\n");
+    else
+        printf("Could not update the account.\n");
 }

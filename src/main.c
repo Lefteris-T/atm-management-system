@@ -25,18 +25,17 @@ void mainMenu(struct User u)
             createNewAcc(u);
             break;
         case 2:
-            // student TODO : add your **Update account information** function
-            // here
+            updateAccount(u);
             break;
         case 3:
         {
-            int requestedAccountNbr;
+            int requestedaccountId;
             int lookupStatus;
             struct Record found;
 
-            printf("\nEnter the account number: ");
+            printf("\nEnter the account ID: ");
 
-            int inputResult = scanf("%d", &requestedAccountNbr);
+            int inputResult = scanf("%d", &requestedaccountId);
 
             if (inputResult == EOF)
             {
@@ -50,10 +49,10 @@ void mainMenu(struct User u)
                 {
                 }
 
-                printf("Invalid account number.\n");
+                printf("Invalid account ID.\n");
             }
             else if ((lookupStatus = findOwnedAccount(
-                          u, requestedAccountNbr, &found)) == 1)
+                          u, requestedaccountId, &found)) == 1)
             {
                 printf("\nAccount number: %d\n"
                        "Owner: %s\n"
