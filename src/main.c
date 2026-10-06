@@ -76,16 +76,18 @@ void mainMenu(struct User u)
             break;
         case 2:
             updateAccount(u);
+            if (!returnToMenuOrExit())
+                return;
             break;
         case 3:
         {
-            int requestedaccountId;
+            int requestedAccountNbr;
             int lookupStatus;
             struct Record found;
 
-            printf("\nEnter the account ID: ");
+            printf("\nEnter the account number: ");
 
-            int inputResult = scanf("%d", &requestedaccountId);
+            int inputResult = scanf("%d", &requestedAccountNbr);
 
             if (inputResult == EOF)
             {
@@ -99,10 +101,10 @@ void mainMenu(struct User u)
                 {
                 }
 
-                printf("Invalid account ID.\n");
+                printf("Invalid account number.\n");
             }
             else if ((lookupStatus = findOwnedAccount(
-                          u, requestedaccountId, &found)) == 1)
+                          u, requestedAccountNbr, &found)) == 1)
             {
                 printf("\nAccount number: %d\n"
                        "Owner: %s\n"

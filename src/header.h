@@ -44,7 +44,7 @@ void makeTransaction(struct User u);
 /* Update one owned account, or delete it when replacement is NULL.
  * Returns 1 on success, 0 when no such owned account exists,
  * and -1 when reading or rewriting storage fails. */
-int rewriteOwnedAccount(int ownerId, int accountId,
+int rewriteOwnedAccount(int ownerId, int accountNbr,
                         const struct Record *replacement);
 void updateAccount(struct User u);
 void removeAccount(struct User u);

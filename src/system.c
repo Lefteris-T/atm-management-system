@@ -49,7 +49,7 @@ int saveAccountToFile(FILE *ptr, const struct Record *r)
                    r->amount,
                    r->accountType) >= 0;
 }
-int rewriteOwnedAccount(int ownerId, int accountId,
+int rewriteOwnedAccount(int ownerId, int accountNbr,
                         const struct Record *replacement)
 {
     FILE *source = fopen(RECORDS, "r");
@@ -86,7 +86,7 @@ int rewriteOwnedAccount(int ownerId, int accountId,
     while ((readStatus = getAccountFromFile(source, &current)) == 1)
     {
         if (current.userId == ownerId &&
-            current.id == accountId)
+            current.accountNbr == accountNbr)
         {
             if (found)
             {
@@ -315,7 +315,8 @@ noAccount:
         return;
     }
 
-    if (strcmp(r.accountType, "savings") != 0 &&
+    if (strcmp(r.accountType, "saving") != 0 &&
+        strcmp(r.accountType, "savings") != 0 &&
         strcmp(r.accountType, "current") != 0 &&
         strcmp(r.accountType, "fixed01") != 0 &&
         strcmp(r.accountType, "fixed02") != 0 &&
@@ -324,6 +325,12 @@ noAccount:
         printf("Invalid account type.\n");
         fclose(pf);
         return;
+    }
+
+    /* Store one spelling consistently while accepting both input forms. */
+    if (strcmp(r.accountType, "saving") == 0)
+    {
+        snprintf(r.accountType, sizeof r.accountType, "%s", "savings");
     }
 
     if (fseek(pf, 0, SEEK_END) != 0 ||
@@ -380,7 +387,7 @@ void checkAllAccounts(struct User u)
     fclose(pf);
     success(u);
 }
-int findOwnedAccount(struct User u, int accountId, struct Record *out)
+int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
 {
     FILE *pf = fopen(RECORDS, "r");
     struct Record current = {0};
@@ -395,7 +402,7 @@ int findOwnedAccount(struct User u, int accountId, struct Record *out)
     while ((readStatus = getAccountFromFile(pf, &current)) == 1)
     {
         if (current.userId == u.id &&
-            current.id == accountId)
+            current.accountNbr == accountNbr)
         {
             *out = current;
             fclose(pf);
@@ -455,17 +462,17 @@ void showAccountInterest(struct Record r)
 }
 void updateAccount(struct User u)
 {
-    int accountId;
+    int accountNbr;
     struct Record record;
 
-    printf("Enter the account ID to update: ");
-    if (scanf("%d", &accountId) != 1)
+    printf("Enter the account number to update: ");
+    if (scanf("%d", &accountNbr) != 1)
     {
-        printf("Invalid account ID.\n");
+        printf("Invalid account number.\n");
         return;
     }
 
-    if (!findOwnedAccount(u, accountId, &record))
+    if (findOwnedAccount(u, accountNbr, &record) != 1)
     {
         printf("Account not found or it does not belong to you.\n");
         return;
@@ -508,7 +515,7 @@ void updateAccount(struct User u)
         return;
     }
 
-    int result = rewriteOwnedAccount(u.id, accountId, &record);
+    int result = rewriteOwnedAccount(u.id, accountNbr, &record);
 
     if (result == 1)
         printf("Account updated successfully.\n");
@@ -525,18 +532,18 @@ static void clearInputLine(void)
 }
 void makeTransaction(struct User u)
 {
-    int accountId;
+    int accountNbr;
     struct Record record;
 
-    printf("Enter the account ID: ");
-    if (scanf("%d", &accountId) != 1)
+    printf("Enter the account number: ");
+    if (scanf("%d", &accountNbr) != 1)
     {
         clearInputLine();
-        printf("Invalid account ID.\n");
+        printf("Invalid account number.\n");
         return;
     }
 
-    if (findOwnedAccount(u, accountId, &record) != 1)
+    if (findOwnedAccount(u, accountNbr, &record) != 1)
     {
         printf("Account not found or it does not belong to you.\n");
         return;
@@ -601,7 +608,7 @@ void makeTransaction(struct User u)
 
     record.amount = newBalance;
 
-    if (rewriteOwnedAccount(u.id, accountId, &record) != 1)
+    if (rewriteOwnedAccount(u.id, accountNbr, &record) != 1)
     {
         printf("Transaction could not be saved.\n");
         return;
@@ -612,18 +619,18 @@ void makeTransaction(struct User u)
 
 void removeAccount(struct User u)
 {
-    int accountId;
+    int accountNbr;
     struct Record record;
 
-    printf("Enter the account ID to remove: ");
-    if (scanf("%d", &accountId) != 1)
+    printf("Enter the account number to remove: ");
+    if (scanf("%d", &accountNbr) != 1)
     {
         clearInputLine();
-        printf("Invalid account ID.\n");
+        printf("Invalid account number.\n");
         return;
     }
 
-    if (findOwnedAccount(u, accountId, &record) != 1)
+    if (findOwnedAccount(u, accountNbr, &record) != 1)
     {
         printf("Account not found or it does not belong to you.\n");
         return;
@@ -648,7 +655,7 @@ void removeAccount(struct User u)
         return;
     }
 
-    int result = rewriteOwnedAccount(u.id, accountId, NULL);
+    int result = rewriteOwnedAccount(u.id, accountNbr, NULL);
 
     if (result == 1)
         printf("Account deleted successfully.\n");
@@ -691,20 +698,20 @@ static int userHasAccountNumber(int userId, int accountNbr);
 
 void transferOwnership(struct User u)
 {
-    int accountId;
+    int accountNbr;
     struct Record record;
     char recipientName[50];
     struct User recipient;
 
-    printf("Enter the account ID to transfer: ");
-    if (scanf("%d", &accountId) != 1)
+    printf("Enter the account number to transfer: ");
+    if (scanf("%d", &accountNbr) != 1)
     {
         clearInputLine();
-        printf("Invalid account ID.\n");
+        printf("Invalid account number.\n");
         return;
     }
 
-    if (findOwnedAccount(u, accountId, &record) != 1)
+    if (findOwnedAccount(u, accountNbr, &record) != 1)
     {
         printf("Account not found or it does not belong to you.\n");
         return;
@@ -767,7 +774,7 @@ void transferOwnership(struct User u)
     record.userId = recipient.id;
     snprintf(record.name, sizeof(record.name), "%s", recipient.name);
 
-    if (rewriteOwnedAccount(u.id, accountId, &record) != 1)
+    if (rewriteOwnedAccount(u.id, accountNbr, &record) != 1)
     {
         printf("Transfer could not be saved.\n");
         return;
