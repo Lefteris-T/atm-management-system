@@ -75,8 +75,8 @@ Source: [exercise.md](exercise.md), [audit.md](audit.md), and the supplied start
 
 ### Phase 6 — Save changes to existing accounts
 
-- [ ] Add a small, reusable way to update or remove one owned record: read records, write a temporary file, check errors, then replace the original only after a successful write.
-- [ ] Preserve all other records, IDs, and field order. A missing or unowned account must leave storage unchanged.
+- [x] Add a small, reusable way to update or remove one owned record: read records, write a temporary file, check errors, then replace the original only after a successful write.
+- [x] Preserve all other records, IDs, and field order. A missing or unowned account must leave storage unchanged.
 - [ ] Check a successful rewrite and a rejected rewrite with multiple users' records present.
 
 **Learn:** append mode cannot update or delete an existing record.  

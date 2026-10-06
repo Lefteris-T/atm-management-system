@@ -1,37 +1,151 @@
+#define _POSIX_C_SOURCE 200809L
+#include <unistd.h>
 #include "header.h"
 
 const char *RECORDS = "./data/records.txt";
 
-int getAccountFromFile(FILE *ptr, char name[50], struct Record *r)
+int getAccountFromFile(FILE *ptr, struct Record *r)
 {
-    return fscanf(ptr, "%d %d %49s %d %d/%d/%d %99s %d %lf %9s",
-                  &r->id,
-                  &r->userId,
-                  name,
-                  &r->accountNbr,
-                  &r->deposit.month,
-                  &r->deposit.day,
-                  &r->deposit.year,
-                  r->country,
-                  &r->phone,
-                  &r->amount,
-                  r->accountType) == 11;
+    int fieldsRead = fscanf(ptr, "%d %d %99s %d %d/%d/%d %99s %d %lf %9s",
+                            &r->id,
+                            &r->userId,
+                            r->name,
+                            &r->accountNbr,
+                            &r->deposit.month,
+                            &r->deposit.day,
+                            &r->deposit.year,
+                            r->country,
+                            &r->phone,
+                            &r->amount,
+                            r->accountType);
+
+    if (fieldsRead == 11)
+    {
+        return 1;
+    }
+
+    /* Distinguish a clean end of file from a malformed or truncated row. */
+    if (fieldsRead == EOF && feof(ptr) && !ferror(ptr))
+    {
+        return 0;
+    }
+
+    return -1;
 }
 
-void saveAccountToFile(FILE *ptr, struct User u, struct Record r)
+int saveAccountToFile(FILE *ptr, const struct Record *r)
 {
-    fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n\n",
-            r.id,
-            u.id,
-            u.name,
-            r.accountNbr,
-            r.deposit.month,
-            r.deposit.day,
-            r.deposit.year,
-            r.country,
-            r.phone,
-            r.amount,
-            r.accountType);
+    return fprintf(ptr, "%d %d %s %d %d/%d/%d %s %d %.2f %s\n",
+                   r->id,
+                   r->userId,
+                   r->name,
+                   r->accountNbr,
+                   r->deposit.month,
+                   r->deposit.day,
+                   r->deposit.year,
+                   r->country,
+                   r->phone,
+                   r->amount,
+                   r->accountType) >= 0;
+}
+int rewriteOwnedAccount(int ownerId, int accountNbr,
+                        const struct Record *replacement)
+{
+    FILE *source = fopen(RECORDS, "r");
+    if (source == NULL)
+    {
+        perror("Opening records.txt");
+        return -1;
+    }
+
+    char tempPath[] = "./data/records.tmp.XXXXXX";
+    int fd = mkstemp(tempPath);
+    if (fd == -1)
+    {
+        perror("Creating temporary file");
+        fclose(source);
+        return -1;
+    }
+
+    FILE *target = fdopen(fd, "w");
+    if (target == NULL)
+    {
+        perror("Opening temporary file");
+        close(fd);
+        remove(tempPath);
+        fclose(source);
+        return -1;
+    }
+
+    struct Record current = {0};
+    int found = 0;
+    int failed = 0;
+
+    int readStatus;
+    while ((readStatus = getAccountFromFile(source, &current)) == 1)
+    {
+        if (current.userId == ownerId &&
+            current.accountNbr == accountNbr)
+        {
+            if (found)
+            {
+                failed = 1; /* Ambiguous duplicate: leave the source intact. */
+                break;
+            }
+            found = 1;
+
+            if (replacement == NULL)
+            {
+                continue; /* Delete: do not copy this record. */
+            }
+
+            if (replacement->id != current.id ||
+                replacement->accountNbr != current.accountNbr ||
+                replacement->userId != current.userId ||
+                strcmp(replacement->name, current.name) != 0 ||
+                !saveAccountToFile(target, replacement))
+            {
+                failed = 1;
+                break;
+            }
+        }
+        else if (!saveAccountToFile(target, &current))
+        {
+            failed = 1;
+            break;
+        }
+    }
+
+    /* A malformed record must not result in a shortened file. */
+    if (readStatus != 0)
+    {
+        failed = 1;
+    }
+
+    if (fclose(source) != 0)
+    {
+        failed = 1;
+    }
+
+    if (fclose(target) != 0)
+    {
+        failed = 1;
+    }
+
+    if (failed || !found)
+    {
+        remove(tempPath);
+        return failed ? -1 : 0;
+    }
+
+    if (rename(tempPath, RECORDS) != 0)
+    {
+        perror("Replacing records.txt");
+        remove(tempPath);
+        return -1;
+    }
+
+    return 1;
 }
 
 void stayOrReturn(int notGood, void f(struct User u), struct User u)
@@ -98,9 +212,8 @@ invalid:
 
 void createNewAcc(struct User u)
 {
-    struct Record r;
-    struct Record cr;
-    char userName[50];
+    struct Record r = {0};
+    struct Record cr = {0};
     FILE *pf = fopen(RECORDS, "a+");
 
     if (pf == NULL)
@@ -111,6 +224,7 @@ void createNewAcc(struct User u)
 
     system("clear");
     printf("\t\t\t===== New record =====\n");
+
 noAccount:
     printf("\nEnter today's date(mm/dd/yyyy):");
     if (scanf("%d/%d/%d",
@@ -137,7 +251,8 @@ noAccount:
     int maxId = -1;
     rewind(pf);
 
-    while (getAccountFromFile(pf, userName, &cr))
+    int readStatus;
+    while ((readStatus = getAccountFromFile(pf, &cr)) == 1)
     {
         if (cr.id > maxId)
         {
@@ -151,8 +266,16 @@ noAccount:
         }
     }
 
+    if (readStatus < 0)
+    {
+        fprintf(stderr, "Invalid record in records.txt; account was not saved.\n");
+        fclose(pf);
+        return;
+    }
+
     r.id = maxId + 1;
     r.userId = u.id;
+    snprintf(r.name, sizeof r.name, "%s", u.name);
 
     printf("\nEnter the country:");
     if (scanf("%99s", r.country) != 1)
@@ -204,16 +327,25 @@ noAccount:
         return;
     }
 
-    fseek(pf, 0, SEEK_END);
-    saveAccountToFile(pf, u, r);
+    if (fseek(pf, 0, SEEK_END) != 0 ||
+        !saveAccountToFile(pf, &r))
+    {
+        perror("Saving account");
+        fclose(pf);
+        return;
+    }
 
-    fclose(pf);
+    if (fclose(pf) != 0)
+    {
+        perror("Closing records.txt");
+        return;
+    }
+
     success(u);
 }
 
 void checkAllAccounts(struct User u)
 {
-    char userName[100];
     struct Record r;
 
     FILE *pf = fopen(RECORDS, "r");
@@ -225,7 +357,8 @@ void checkAllAccounts(struct User u)
 
     system("clear");
     printf("\t\t====== All accounts from user, %s =====\n\n", u.name);
-    while (getAccountFromFile(pf, userName, &r))
+    int readStatus;
+    while ((readStatus = getAccountFromFile(pf, &r)) == 1)
     {
         if (r.userId == u.id)
         {
@@ -241,6 +374,10 @@ void checkAllAccounts(struct User u)
                    r.accountType);
         }
     }
+    if (readStatus < 0)
+    {
+        fprintf(stderr, "Invalid record in records.txt; listing stopped.\n");
+    }
     fclose(pf);
     success(u);
 }
@@ -252,10 +389,11 @@ int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
     if (pf == NULL)
     {
         perror("records.txt");
-        return 0;
+        return -1;
     }
 
-    while (getAccountFromFile(pf, current.name, &current))
+    int readStatus;
+    while ((readStatus = getAccountFromFile(pf, &current)) == 1)
     {
         if (current.userId == u.id &&
             current.accountNbr == accountNbr)
@@ -267,7 +405,7 @@ int findOwnedAccount(struct User u, int accountNbr, struct Record *out)
     }
 
     fclose(pf);
-    return 0;
+    return readStatus == 0 ? 0 : -1;
 }
 void showAccountInterest(struct Record r)
 {

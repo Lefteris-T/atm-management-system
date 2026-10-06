@@ -31,6 +31,7 @@ void mainMenu(struct User u)
         case 3:
         {
             int requestedAccountNbr;
+            int lookupStatus;
             struct Record found;
 
             printf("\nEnter the account number: ");
@@ -51,7 +52,8 @@ void mainMenu(struct User u)
 
                 printf("Invalid account number.\n");
             }
-            else if (findOwnedAccount(u, requestedAccountNbr, &found))
+            else if ((lookupStatus = findOwnedAccount(
+                          u, requestedAccountNbr, &found)) == 1)
             {
                 printf("\nAccount number: %d\n"
                        "Owner: %s\n"
@@ -72,9 +74,13 @@ void mainMenu(struct User u)
 
                 showAccountInterest(found);
             }
-            else
+            else if (lookupStatus == 0)
             {
                 printf("Account not found or not owned by you.\n");
+            }
+            else
+            {
+                printf("Could not read records.txt; account lookup failed.\n");
             }
 
             while (1)
