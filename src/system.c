@@ -611,3 +611,49 @@ void makeTransaction(struct User u)
 
     printf("Transaction saved. New balance: $%.2f\n", record.amount);
 }
+
+void removeAccount(struct User u)
+{
+    int accountId;
+    struct Record record;
+
+    printf("Enter the account ID to remove: ");
+    if (scanf("%d", &accountId) != 1)
+    {
+        clearInputLine();
+        printf("Invalid account ID.\n");
+        return;
+    }
+
+    if (findOwnedAccount(u, accountId, &record) != 1)
+    {
+        printf("Account not found or it does not belong to you.\n");
+        return;
+    }
+
+    int confirm;
+
+    printf("Account ID %d, number %d, balance $%.2f\n",
+           record.id, record.accountNbr, record.amount);
+    printf("Delete this account? Enter 1 for yes or 0 for no: ");
+
+    if (scanf("%d", &confirm) != 1)
+    {
+        clearInputLine();
+        printf("Invalid choice. Account was not deleted.\n");
+        return;
+    }
+
+    if (confirm != 1)
+    {
+        printf("Account was not deleted.\n");
+        return;
+    }
+
+    int result = rewriteOwnedAccount(u.id, accountId, NULL);
+
+    if (result == 1)
+        printf("Account deleted successfully.\n");
+    else
+        printf("Account could not be deleted.\n");
+}

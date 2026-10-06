@@ -181,8 +181,9 @@ void mainMenu(struct User u)
                 return;
             break;
         case 6:
-            // student TODO : add your **Remove existing account** function
-            // here
+            removeAccount(u);
+            if (!returnToMenuOrExit())
+                return;
             break;
         case 7:
             // student TODO : add your **Transfer owner** function

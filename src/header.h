@@ -47,3 +47,4 @@ void makeTransaction(struct User u);
 int rewriteOwnedAccount(int ownerId, int accountId,
                         const struct Record *replacement);
 void updateAccount(struct User u);
+void removeAccount(struct User u);
