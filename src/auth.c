@@ -1,5 +1,6 @@
 #include <termios.h>
 #include "header.h"
+#include <sodium.h>
 
 char *USERS = "./data/users.txt";
 
@@ -43,6 +44,7 @@ int authenticateUser(struct User *u)
 {
     FILE *fp = fopen("./data/users.txt", "r");
     struct User userChecker;
+    char storedPassword[crypto_pwhash_STRBYTES];
 
     if (fp == NULL)
     {
@@ -50,13 +52,31 @@ int authenticateUser(struct User *u)
         return 0;
     }
 
-    while (fscanf(fp, "%d %49s %49s",
+    while (fscanf(fp, "%d %49s %127s",
                   &userChecker.id,
                   userChecker.name,
-                  userChecker.password) == 3)
+                  storedPassword) == 3)
     {
-        if (strcmp(userChecker.name, u->name) == 0 &&
-            strcmp(userChecker.password, u->password) == 0)
+        if (strcmp(userChecker.name, u->name) != 0)
+            continue;
+
+        int passwordMatches;
+
+        if (strncmp(storedPassword, crypto_pwhash_STRPREFIX,
+                    strlen(crypto_pwhash_STRPREFIX)) == 0)
+        {
+            passwordMatches =
+                crypto_pwhash_str_verify(storedPassword,
+                                         u->password,
+                                         strlen(u->password)) == 0;
+        }
+        else
+        {
+            /* Existing plaintext entry; migration comes later. */
+            passwordMatches = strcmp(storedPassword, u->password) == 0;
+        }
+
+        if (passwordMatches)
         {
             u->id = userChecker.id;
             fclose(fp);
@@ -71,6 +91,7 @@ void registerMenu(void)
 {
     struct User newUser;
     struct User existingUser;
+    char storedPassword[crypto_pwhash_STRBYTES];
     int maxId = -1;
     FILE *fp = fopen(USERS, "a+");
 
@@ -89,10 +110,10 @@ void registerMenu(void)
 
     rewind(fp);
 
-    while (fscanf(fp, "%d %49s %49s",
+    while (fscanf(fp, "%d %49s %127s",
                   &existingUser.id,
                   existingUser.name,
-                  existingUser.password) == 3)
+                  storedPassword) == 3)
     {
         if (existingUser.id > maxId)
         {
@@ -113,6 +134,21 @@ void registerMenu(void)
         fclose(fp);
         return;
     }
+    char passwordHash[crypto_pwhash_STRBYTES];
+
+    if (crypto_pwhash_str(passwordHash,
+                          newUser.password,
+                          strlen(newUser.password),
+                          crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                          crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
+    {
+        sodium_memzero(newUser.password, sizeof newUser.password);
+        fprintf(stderr, "Could not hash password.\n");
+        fclose(fp);
+        return;
+    }
+
+    sodium_memzero(newUser.password, sizeof newUser.password);
 
     newUser.id = maxId + 1;
 
@@ -120,7 +156,7 @@ void registerMenu(void)
         fprintf(fp, "%d %s %s\n",
                 newUser.id,
                 newUser.name,
-                newUser.password) < 0)
+                passwordHash) < 0)
     {
         perror("Saving user");
         fclose(fp);

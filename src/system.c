@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include "header.h"
 #include <math.h>
+#include <sodium.h>
 
 const char *RECORDS = "./data/records.txt";
 
@@ -692,13 +693,14 @@ static int findUserByName(const char *name, struct User *out)
         return -1;
     }
 
-    struct User candidate;
+    struct User candidate = {0};
+    char storedPassword[crypto_pwhash_STRBYTES];
     int fieldsRead;
 
-    while ((fieldsRead = fscanf(pf, "%d %49s %49s",
+    while ((fieldsRead = fscanf(pf, "%d %49s %127s",
                                 &candidate.id,
                                 candidate.name,
-                                candidate.password)) == 3)
+                                storedPassword)) == 3)
     {
         if (strcmp(candidate.name, name) == 0)
         {

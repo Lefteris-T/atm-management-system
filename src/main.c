@@ -1,4 +1,5 @@
 #include "header.h"
+#include <sodium.h>
 
 static int returnToMenuOrExit(void)
 {
@@ -232,6 +233,12 @@ void initMenu(struct User *u)
 int main(void)
 {
     struct User u;
+
+    if (sodium_init() < 0)
+    {
+        fprintf(stderr, "Could not initialize libsodium.\n");
+        return 1;
+    }
 
     initMenu(&u);
     mainMenu(u);
