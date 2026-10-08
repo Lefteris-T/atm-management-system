@@ -16,11 +16,6 @@ static void stopNotificationListener(void)
 {
     if (listenerPid == -1)
         return;
-    if (notificationLockFd != -1)
-    {
-        close(notificationLockFd);
-        notificationLockFd = -1;
-    }
     kill(listenerPid, SIGTERM);
 
     while (waitpid(listenerPid, NULL, 0) == -1 && errno == EINTR)
@@ -29,6 +24,12 @@ static void stopNotificationListener(void)
 
     unlink(activeFifo);
     listenerPid = -1;
+
+    if (notificationLockFd != -1)
+    {
+        close(notificationLockFd);
+        notificationLockFd = -1;
+    }
 }
 
 int notificationPath(int userId, char *path, size_t size)
