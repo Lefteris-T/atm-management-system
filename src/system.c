@@ -381,6 +381,8 @@ void checkAllAccounts(struct User u)
     system("clear");
     printf("\t\t====== All accounts from user, %s =====\n\n", u.name);
     int readStatus;
+    int ownedCount = 0;
+
     while ((readStatus = getAccountFromFile(pf, &r)) == 1)
     {
         if (r.userId == u.id)
@@ -400,11 +402,19 @@ void checkAllAccounts(struct User u)
                    r.phone,
                    r.amount,
                    r.accountType);
+            ownedCount++;
         }
     }
     if (readStatus < 0)
     {
         fprintf(stderr, "Invalid record in records.txt; listing stopped.\n");
+    }
+    if (readStatus == 0)
+    {
+        if (ownedCount == 0)
+            printf("You have no accounts yet.\n");
+        else
+            printf("\nTotal owned accounts: %d\n", ownedCount);
     }
     fclose(pf);
     success(u);
@@ -804,6 +814,8 @@ void transferOwnership(struct User u)
     }
 
     printf("Account transferred to %s.\n", recipient.name);
+    /* Notify only after persistence succeeds; delivery failure does not undo
+       or invalidate the already-saved ownership change. */
     if (sendTransferNotification(recipient.id, u.name, record.accountNbr))
         printf("Notification sent to %s.\n", recipient.name);
     else

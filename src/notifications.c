@@ -16,6 +16,9 @@ static void stopNotificationListener(void)
 {
     if (listenerPid == -1)
         return;
+
+    /* Keep the per-user lock until teardown is complete so a new session
+       cannot replace the FIFO while this session is still removing it. */
     kill(listenerPid, SIGTERM);
 
     while (waitpid(listenerPid, NULL, 0) == -1 && errno == EINTR)
@@ -113,7 +116,8 @@ int startNotificationListener(int userId)
         return 0;
     }
 
-    /* We hold the lock: no other current app session owns this FIFO. */
+    /* The per-user lock makes it safe to recover a stale FIFO from a prior
+       session without interfering with another active session. */
     struct stat info;
 
     if (lstat(path, &info) == 0)
@@ -152,6 +156,7 @@ int startNotificationListener(int userId)
     if (child == 0)
     {
         close(lockFd);
+        /* The child owns only the read side; the parent keeps the lock. */
         listenForNotifications(path);
         _exit(1);
     }
@@ -190,6 +195,8 @@ int sendTransferNotification(int recipientId,
     if (fd == -1)
         return 0;
 
+    /* A short, nonblocking write keeps an offline recipient from delaying
+       the ownership transfer. */
     ssize_t written = write(fd, message, (size_t)length);
     close(fd);
 
