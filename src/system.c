@@ -171,7 +171,7 @@ void stayOrReturn(int notGood, void f(struct User u), struct User u)
     }
     else
     {
-        printf("\nEnter 1 to go to the main menu and 0 to exit:");
+        printf("\nEnter 1 for the main menu or 0 to exit: ");
         scanf("%d", &option);
     }
     if (option == 1)
@@ -194,7 +194,7 @@ void success(struct User u)
 
     while (1)
     {
-        printf("\nEnter 1 to go to the main menu or 0 to exit: ");
+        printf("\nEnter 1 for the main menu or 0 to exit: ");
 
         int inputResult = scanf("%d", &option);
 
