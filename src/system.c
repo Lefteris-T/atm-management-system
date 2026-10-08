@@ -189,23 +189,39 @@ void stayOrReturn(int notGood, void f(struct User u), struct User u)
 void success(struct User u)
 {
     int option;
-    printf("\n✔ Success!\n\n");
-invalid:
-    printf("Enter 1 to go to the main menu and 0 to exit!\n");
-    scanf("%d", &option);
-    system("clear");
-    if (option == 1)
+
+    printf("\n✔ Success!\n");
+
+    while (1)
     {
-        return;
-    }
-    else if (option == 0)
-    {
-        exit(1);
-    }
-    else
-    {
-        printf("Insert a valid operation!\n");
-        goto invalid;
+        printf("\nEnter 1 to go to the main menu or 0 to exit: ");
+
+        int inputResult = scanf("%d", &option);
+
+        if (inputResult == EOF)
+            exit(0);
+
+        if (inputResult != 1)
+        {
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+
+            printf("Invalid operation!\n");
+            continue;
+        }
+
+        if (option == 1)
+        {
+            system("clear");
+            return;
+        }
+
+        if (option == 0)
+            exit(0);
+
+        printf("Invalid operation!\n");
     }
 }
 
@@ -369,7 +385,12 @@ void checkAllAccounts(struct User u)
         if (r.userId == u.id)
         {
             printf("_____________________\n");
-            printf("\nAccount number:%d\nDeposit Date:%d/%d/%d \ncountry:%s \nPhone number:%d \nAmount deposited: $%.2f \nType Of Account:%s\n",
+            printf("\nAccount number: %d\n"
+                   "Deposit date: %02d/%02d/%04d\n"
+                   "Country: %s\n"
+                   "Phone: %d\n"
+                   "Balance: $%.2f\n"
+                   "Account type: %s\n",
                    r.accountNbr,
                    r.deposit.month,
                    r.deposit.day,

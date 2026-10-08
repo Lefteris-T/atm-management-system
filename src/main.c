@@ -157,8 +157,7 @@ void mainMenu(struct User u)
                 return;
             break;
         case 8:
-            exit(1);
-            break;
+            return;
         default:
             printf("Invalid operation!\n");
         }
