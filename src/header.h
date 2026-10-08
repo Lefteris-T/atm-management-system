@@ -49,3 +49,9 @@ int rewriteOwnedAccount(int ownerId, int accountNbr,
 void updateAccount(struct User u);
 void removeAccount(struct User u);
 void transferOwnership(struct User u);
+int notificationPath(int userId, char *path, size_t size);
+int createNotificationFifo(int userId);
+int startNotificationListener(int userId);
+int sendTransferNotification(int recipientId,
+                             const char *senderName,
+                             int accountNbr);

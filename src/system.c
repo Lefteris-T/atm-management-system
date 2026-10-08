@@ -804,6 +804,10 @@ void transferOwnership(struct User u)
     }
 
     printf("Account transferred to %s.\n", recipient.name);
+    if (sendTransferNotification(recipient.id, u.name, record.accountNbr))
+        printf("Notification sent to %s.\n", recipient.name);
+    else
+        printf("Notification unavailable; the account transfer was saved.\n");
 }
 static int userHasAccountNumber(int userId, int accountNbr)
 {

@@ -1,5 +1,6 @@
 #include "header.h"
 #include <sodium.h>
+#include <signal.h>
 
 static int returnToMenuOrExit(void)
 {
@@ -239,8 +240,17 @@ int main(void)
         fprintf(stderr, "Could not initialize libsodium.\n");
         return 1;
     }
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+    {
+        perror("signal");
+        return 1;
+    }
 
     initMenu(&u);
+
+    if (!startNotificationListener(u.id))
+        fprintf(stderr, "Notifications unavailable for this session.\n");
+
     mainMenu(u);
     return 0;
 }

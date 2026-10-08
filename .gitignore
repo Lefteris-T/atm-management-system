@@ -1,3 +1,5 @@
 /atm
 /src/*.o
 /data/*.txt
+data/notify-*.fifo
+data/notify-*.lock

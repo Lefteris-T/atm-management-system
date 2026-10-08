@@ -16,7 +16,7 @@
 #	rm -f $(objects)
 
 
-objects = src/main.o src/system.o src/auth.o
+objects = src/main.o src/system.o src/auth.o src/notifications.o
 
 atm: $(objects)
 	cc -o atm $(objects) -lsodium
@@ -29,6 +29,9 @@ src/system.o: src/system.c src/header.h
 
 src/auth.o: src/auth.c src/header.h
 	cc -c src/auth.c -o src/auth.o
+
+src/notifications.o: src/notifications.c src/header.h
+	cc -c src/notifications.c -o src/notifications.o
 
 .PHONY: clean
 clean:
