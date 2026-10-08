@@ -134,44 +134,8 @@ void mainMenu(struct User u)
                 printf("Could not read records.txt; account lookup failed.\n");
             }
 
-            while (1)
-            {
-                int nextOption;
-
-                printf("\nEnter 1 for the main menu or 0 to exit: ");
-
-                int nextInput = scanf("%d", &nextOption);
-
-                if (nextInput == EOF)
-                {
-                    return;
-                }
-
-                if (nextInput != 1)
-                {
-                    int ch;
-                    while ((ch = getchar()) != '\n' && ch != EOF)
-                    {
-                    }
-
-                    printf("Invalid operation!\n");
-                    continue;
-                }
-
-                if (nextOption == 1)
-                {
-                    break;
-                }
-
-                if (nextOption == 0)
-                {
-                    return;
-                }
-
-                printf("Invalid operation!\n");
-            }
-
-            break;
+            if (!returnToMenuOrExit())
+                return;
         }
         break;
         case 4:
