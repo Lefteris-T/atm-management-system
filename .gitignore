@@ -1,2 +1,3 @@
 /atm
 /src/*.o
+/data/*.txt

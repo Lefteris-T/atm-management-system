@@ -1,8 +1,96 @@
+#define _POSIX_C_SOURCE 200809L
+#include <unistd.h>
 #include <termios.h>
 #include "header.h"
 #include <sodium.h>
 
 char *USERS = "./data/users.txt";
+static int migratePlaintextUser(int targetId,
+                                const char *targetName,
+                                const char *plainPassword)
+{
+    char hash[crypto_pwhash_STRBYTES];
+
+    if (crypto_pwhash_str(hash, plainPassword, strlen(plainPassword),
+                          crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                          crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0)
+        return 0;
+
+    FILE *source = fopen(USERS, "r");
+    if (source == NULL)
+        return 0;
+
+    char tempPath[] = "./data/users.tmp.XXXXXX";
+    int fd = mkstemp(tempPath);
+    if (fd == -1)
+    {
+        fclose(source);
+        return 0;
+    }
+
+    FILE *target = fdopen(fd, "w");
+    if (target == NULL)
+    {
+        close(fd);
+        remove(tempPath);
+        fclose(source);
+        return 0;
+    }
+
+    struct User row = {0};
+    char savedPassword[crypto_pwhash_STRBYTES];
+    int fieldsRead;
+    int found = 0;
+    int failed = 0;
+
+    while ((fieldsRead = fscanf(source, "%d %49s %127s",
+                                &row.id, row.name, savedPassword)) == 3)
+    {
+        const char *passwordToWrite = savedPassword;
+
+        if (row.id == targetId && strcmp(row.name, targetName) == 0)
+        {
+            if (found || strcmp(savedPassword, plainPassword) != 0)
+            {
+                failed = 1;
+                break;
+            }
+
+            passwordToWrite = hash;
+            found = 1;
+        }
+
+        if (fprintf(target, "%d %s %s\n",
+                    row.id, row.name, passwordToWrite) < 0)
+        {
+            failed = 1;
+            break;
+        }
+    }
+
+    if (fieldsRead != EOF || !feof(source) || ferror(source))
+        failed = 1;
+
+    if (fclose(source) != 0)
+        failed = 1;
+
+    if (fclose(target) != 0)
+        failed = 1;
+
+    if (failed || !found)
+    {
+        remove(tempPath);
+        return 0;
+    }
+
+    if (rename(tempPath, USERS) != 0)
+    {
+        remove(tempPath);
+        return 0;
+    }
+
+    return 1;
+}
 
 int loginMenu(char a[50], char pass[50])
 {
@@ -78,8 +166,21 @@ int authenticateUser(struct User *u)
 
         if (passwordMatches)
         {
+            int wasPlaintext =
+                strncmp(storedPassword, crypto_pwhash_STRPREFIX,
+                        strlen(crypto_pwhash_STRPREFIX)) != 0;
+
             u->id = userChecker.id;
             fclose(fp);
+
+            if (wasPlaintext &&
+                !migratePlaintextUser(u->id, u->name, u->password))
+            {
+                fprintf(stderr,
+                        "Login succeeded, but the password upgrade was not saved.\n");
+            }
+
+            sodium_memzero(u->password, sizeof u->password);
             return 1;
         }
     }
