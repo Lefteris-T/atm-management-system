@@ -226,6 +226,46 @@ void success(struct User u)
     }
 }
 
+static void createAccountError(FILE *pf, const char *message)
+{
+    if (pf != NULL)
+        fclose(pf);
+
+    /* Discard the failed input line before asking for the next action. */
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF)
+    {
+    }
+
+    printf("%s\n", message);
+
+    while (1)
+    {
+        int choice;
+        printf("\nEnter 1 for the main menu or 0 to exit: ");
+
+        int inputResult = scanf("%d", &choice);
+        if (inputResult == EOF)
+            exit(0);
+
+        if (inputResult != 1)
+        {
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+            printf("Please enter 1 or 0.\n");
+            continue;
+        }
+
+        if (choice == 1)
+            return;
+        if (choice == 0)
+            exit(0);
+
+        printf("Please enter 1 or 0.\n");
+    }
+}
+
 void createNewAcc(struct User u)
 {
     struct Record r = {0};
@@ -235,13 +275,13 @@ void createNewAcc(struct User u)
     if (pf == NULL)
     {
         perror("records.txt");
+        createAccountError(NULL, "Account creation could not continue.");
         return;
     }
 
     system("clear");
     printf("\t\t\t===== New record =====\n");
 
-noAccount:
     printf("\nEnter today's date(mm/dd/yyyy):");
     if (scanf("%d/%d/%d",
               &r.deposit.month,
@@ -251,16 +291,14 @@ noAccount:
         r.deposit.day < 1 || r.deposit.day > 31 ||
         r.deposit.year < 1)
     {
-        printf("Invalid date.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid date.");
         return;
     }
 
     printf("\nEnter the account number:");
     if (scanf("%d", &r.accountNbr) != 1 || r.accountNbr < 0)
     {
-        printf("Invalid account number.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid account number.");
         return;
     }
 
@@ -277,15 +315,15 @@ noAccount:
 
         if (cr.userId == u.id && cr.accountNbr == r.accountNbr)
         {
-            printf("✖ This Account already exists for this user\n\n");
-            goto noAccount;
+            createAccountError(pf, "This account already exists for this user.");
+            return;
         }
     }
 
     if (readStatus < 0)
     {
-        fprintf(stderr, "Invalid record in records.txt; account was not saved.\n");
-        fclose(pf);
+        createAccountError(pf,
+                           "Invalid record in records.txt; account was not saved.");
         return;
     }
 
@@ -296,24 +334,21 @@ noAccount:
     printf("\nEnter the country:");
     if (scanf("%99s", r.country) != 1)
     {
-        printf("Invalid country.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid country.");
         return;
     }
 
     printf("\nEnter the phone number:");
     if (scanf("%d", &r.phone) != 1 || r.phone <= 0)
     {
-        printf("Invalid phone number.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid phone number.");
         return;
     }
 
     printf("\nEnter amount to deposit: $");
     if (scanf("%lf", &r.amount) != 1 || r.amount < 0.0)
     {
-        printf("Invalid deposit amount.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid deposit amount.");
         return;
     }
 
@@ -327,8 +362,7 @@ noAccount:
 
     if (scanf("%9s", r.accountType) != 1)
     {
-        printf("Invalid account type input.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid account type input.");
         return;
     }
 
@@ -339,8 +373,7 @@ noAccount:
         strcmp(r.accountType, "fixed02") != 0 &&
         strcmp(r.accountType, "fixed03") != 0)
     {
-        printf("Invalid account type.\n");
-        fclose(pf);
+        createAccountError(pf, "Invalid account type.");
         return;
     }
 
@@ -354,13 +387,14 @@ noAccount:
         !saveAccountToFile(pf, &r))
     {
         perror("Saving account");
-        fclose(pf);
+        createAccountError(pf, "Account could not be saved.");
         return;
     }
 
     if (fclose(pf) != 0)
     {
         perror("Closing records.txt");
+        createAccountError(NULL, "Account could not be saved.");
         return;
     }
 
